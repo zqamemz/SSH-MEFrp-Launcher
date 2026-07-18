@@ -452,6 +452,27 @@ class TunnelCreateScreen(Screen):
             self._msg("请填写隧道名称和本地端口")
             return
 
+        # 校验端口号
+        try:
+            lp = int(local_port)
+            if lp < 1 or lp > 65535:
+                self._msg(f"本地端口超出范围 (1-65535): {lp}")
+                return
+        except ValueError:
+            self._msg(f"本地端口必须是数字: {local_port}")
+            return
+
+        remote_port_val = None
+        if remote_port:
+            try:
+                remote_port_val = int(remote_port)
+                if remote_port_val < 1 or remote_port_val > 65535:
+                    self._msg(f"远程端口超出范围 (1-65535): {remote_port_val}")
+                    return
+            except ValueError:
+                self._msg(f"远程端口必须是数字: {remote_port}")
+                return
+
         params = {
             "proxyName": name,
             "proxyType": ptype,
@@ -461,8 +482,8 @@ class TunnelCreateScreen(Screen):
 
         if node_val and node_val is not Select.BLANK:
             params["nodeId"] = int(node_val) if str(node_val).isdigit() else node_val
-        if remote_port:
-            params["remotePort"] = int(remote_port)
+        if remote_port_val:
+            params["remotePort"] = remote_port_val
         if domain and ptype in ("http", "https"):
             params["domain"] = domain
 

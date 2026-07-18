@@ -6,14 +6,25 @@ import stat
 import sys
 from pathlib import Path
 
-# mefrpc 在包内的位置
-_BUNDLED_MEFRPC = Path(__file__).parent / "mefrpc"
+# mefrpc 在包内的位置（根据平台决定文件名）
+_BUNDLED_MEFRPC = Path(__file__).parent / ("mefrpc.exe" if sys.platform == "win32" else "mefrpc")
 
-# 平台相关安装目标
+# 平台相关安装目标（优先用户目录，无需 sudo）
 if sys.platform == "win32":
     INSTALL_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "SML" / "bin"
 else:
-    INSTALL_DIR = Path("/usr/local/bin")
+    # 优先尝试用户级目录，不需要 root 权限
+    _user_bin = Path.home() / ".local" / "bin"
+    _system_bin = Path("/usr/local/bin")
+    # 检测用户级目录是否可写，或是否在 PATH 中
+    if _user_bin.exists() or os.access(str(Path.home() / ".local"), os.W_OK):
+        INSTALL_DIR = _user_bin
+    else:
+        # 若 /usr/local/bin 可写（如某些容器环境）则用系统目录，否则仍用用户目录
+        if os.access(str(_system_bin), os.W_OK):
+            INSTALL_DIR = _system_bin
+        else:
+            INSTALL_DIR = _user_bin
 
 INSTALL_NAME = "mefrpc"
 INSTALL_PATH = INSTALL_DIR / INSTALL_NAME
@@ -55,20 +66,11 @@ def install(force: bool = False) -> tuple[bool, str]:
     try:
         shutil.copy2(str(_BUNDLED_MEFRPC), str(INSTALL_PATH))
     except PermissionError:
-        # Windows 下通常不需要 sudo cp，直接尝试
-        if sys.platform != "win32":
-            try:
-                import subprocess
-                r = subprocess.run(
-                    ["sudo", "cp", str(_BUNDLED_MEFRPC), str(INSTALL_PATH)],
-                    capture_output=True, text=True, timeout=30,
-                )
-                if r.returncode != 0:
-                    return False, f"复制失败 (sudo): {r.stderr.strip()}"
-            except Exception as e:
-                return False, f"复制失败: {e}"
-        else:
-            return False, f"复制失败 (权限不足): 请手动将 mefrpc 复制到 {INSTALL_DIR}"
+        # TUI 环境中无法交互输入 sudo 密码，直接提示用户手动操作
+        return False, (
+            f"权限不足，无法写入 {INSTALL_DIR}。"
+            f"请手动执行: cp {_BUNDLED_MEFRPC} {INSTALL_PATH} && chmod +x {INSTALL_PATH}"
+        )
     except Exception as e:
         return False, f"复制失败: {e}"
 
@@ -98,17 +100,10 @@ def uninstall() -> tuple[bool, str]:
     try:
         INSTALL_PATH.unlink()
     except PermissionError:
-        if sys.platform != "win32":
-            try:
-                import subprocess
-                subprocess.run(
-                    ["sudo", "rm", "-f", str(INSTALL_PATH)],
-                    capture_output=True, timeout=10,
-                )
-            except Exception as e:
-                return False, f"卸载失败: {e}"
-        else:
-            return False, f"卸载失败 (权限不足): 请手动删除 {INSTALL_PATH}"
+        return False, (
+            f"权限不足，无法删除 {INSTALL_PATH}。"
+            f"请手动执行: rm -f {INSTALL_PATH}"
+        )
     except Exception as e:
         return False, f"卸载失败: {e}"
 

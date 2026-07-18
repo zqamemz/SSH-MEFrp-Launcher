@@ -134,7 +134,7 @@ class TunnelDetailScreen(Screen):
             status_w = self.query_one("#service-status")
             if isinstance(status_w, Static):
                 if status == "active":
-                    status_w.update(f"● 服务状态: 运行中 (PID: {self.proxy_id})")
+                    status_w.update("● 服务状态: 运行中")
                     status_w.styles.color = "#27ae60"
                 elif status == "inactive":
                     status_w.update("○ 服务状态: 已停止")
@@ -163,7 +163,13 @@ class TunnelDetailScreen(Screen):
         if not check_root():
             self._msg("需要 root 权限来安装 systemd 服务")
             return
+        btn = None
         try:
+            btn = self.query_one("#btn-install")
+            if isinstance(btn, Button):
+                btn.disabled = True
+                btn.label = "安装中..."
+
             config = self.api.get_proxy_config(self.proxy_id)
             proxy_list = self.api.get_proxy_list()
             proxies = proxy_list if isinstance(proxy_list, list) else proxy_list.get("proxies", [])
@@ -187,6 +193,10 @@ class TunnelDetailScreen(Screen):
             self.refresh_data()
         except Exception as e:
             self._msg(f"安装失败: {e}")
+        finally:
+            if btn is not None:
+                btn.disabled = False
+                btn.label = "安装服务"
 
     @work(exclusive=True)
     async def do_service_action(self, action: str):

@@ -86,6 +86,36 @@ def get_tunnel_status(proxy_id: int) -> str:
     return "inactive"
 
 
+def get_all_tunnel_status(proxy_ids: list[int]) -> dict[int, str]:
+    """批量查询多个隧道的 systemd 服务状态（一次 systemctl 调用）。
+
+    返回 {proxy_id: "active"/"inactive"/"not-found"/"failed"} 字典。
+    """
+    if not proxy_ids:
+        return {}
+
+    # 使用 systemctl is-active 批量查询
+    svcs = [_service_name(pid) for pid in proxy_ids]
+    code, out, err = _systemctl(["is-active"] + svcs)
+
+    lines = (out or "").strip().splitlines()
+    result = {}
+    for i, pid in enumerate(proxy_ids):
+        if i < len(lines):
+            status = lines[i].strip()
+            if status in ("active", "inactive", "failed"):
+                result[pid] = status
+            else:
+                result[pid] = "inactive"
+        else:
+            result[pid] = "inactive"
+
+        # 如果服务文件不存在，覆盖为 not-found
+        if result[pid] == "inactive" and not os.path.exists(_service_file_path(pid)):
+            result[pid] = "not-found"
+    return result
+
+
 def install_tunnel_service(proxy_id: int) -> tuple[bool, str]:
     """创建并启用 systemd 服务。"""
     cfg = Config()
