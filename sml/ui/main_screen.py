@@ -32,8 +32,8 @@ class MainScreen(Screen):
     }
 
     #stat-grid {
-        grid-size: 4;
-        grid-columns: 1fr;
+        grid-size: 1 4;
+        grid-columns: 1fr 1fr 1fr 1fr;
         margin: 0 2;
         height: 5;
     }
@@ -50,11 +50,13 @@ class MainScreen(Screen):
         color: #7dcfff;
         text-style: bold;
         text-align: center;
+        height: 2;
     }
 
     .stat-label {
-        color: #565f89;
+        color: #9aa5ce;
         text-align: center;
+        height: 1;
     }
 
     #menu-grid {

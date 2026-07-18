@@ -62,7 +62,7 @@ class SettingsScreen(Screen):
         with Vertical(id="settings-box"):
             yield Static("应用设置", classes="title")
             yield Label("frpc 路径:")
-            yield Input(placeholder="/usr/local/bin/frpc", id="frpc-path")
+            yield Input(placeholder="自动检测或手动设置路径", id="frpc-path")
             yield Label("默认节点 ID:")
             yield Input(placeholder="留空自动选择", id="node-id")
             yield Label("用户名:")
@@ -80,7 +80,7 @@ class SettingsScreen(Screen):
 
     def on_mount(self):
         settings = self.cfg.get_all()
-        self._set_input("frpc-path", settings.get("frpc_path", "/usr/local/bin/frpc"))
+        self._set_input("frpc-path", settings.get("frpc_path", ""))
         self._set_input("node-id", str(settings.get("last_node_id", "")))
         self._set_input("s-username", settings.get("username", ""))
 

@@ -62,7 +62,13 @@ class Config:
     # ---- frpc 路径 ----
     @property
     def frpc_path(self) -> str:
-        return self._data.get("frpc_path", FRPC_BIN)
+        configured = self._data.get("frpc_path", "")
+        if configured and Path(configured).exists():
+            return configured
+        # 未配置或路径不存在，尝试从 installer 获取
+        from sml.installer import get_install_path
+        resolved = get_install_path()
+        return resolved or configured or FRPC_BIN
 
     @frpc_path.setter
     def frpc_path(self, value: str):

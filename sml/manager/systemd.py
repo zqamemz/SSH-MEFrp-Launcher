@@ -238,14 +238,14 @@ def stop_all_tunnels() -> tuple[int, list[str]]:
 
 
 def check_frpc() -> tuple[bool, str]:
-    """检查 frpc 是否可用。"""
+    """检查 frpc/mefrpc 是否可用。"""
     cfg = Config()
     frpc = cfg.frpc_path
     if not os.path.exists(frpc):
-        # 尝试在 PATH 中查找
-        found = shutil.which("frpc")
+        # 尝试在 PATH 中查找 frpc 或 mefrpc
+        found = shutil.which("frpc") or shutil.which("mefrpc")
         if found:
             cfg.frpc_path = found
             return True, f"frpc 已找到: {found}"
-        return False, f"frpc 未找到，请安装 frp 客户端或手动设置路径"
+        return False, "frpc 未找到，请运行 sml-install 安装内置 mefrpc"
     return True, f"frpc 已找到: {frpc}"

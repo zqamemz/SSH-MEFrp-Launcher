@@ -10,22 +10,23 @@ from sml.api.client import MEFrpAPI, APIError
 
 
 class TunnelCreateScreen(Screen):
-    """创建隧道表单。"""
+    """创建隧道表单 + 节点信息面板。"""
 
     TITLE = "创建隧道 - SML"
 
     CSS = """
     TunnelCreateScreen {
-        align: center top;
+        layout: horizontal;
     }
 
     #create-form {
-        width: 60;
-        height: auto;
+        width: 48;
+        min-width: 48;
+        height: 100%;
         padding: 1 2;
         background: #1f2335;
         border: solid #3b4261;
-        margin: 1 0;
+        margin: 1 0 1 1;
     }
 
     #create-form > Label {
@@ -33,7 +34,7 @@ class TunnelCreateScreen(Screen):
     }
 
     #create-form > Input, #create-form > Select {
-        margin-bottom: 1;
+        margin-bottom: 0;
     }
 
     #create-actions {
@@ -49,6 +50,127 @@ class TunnelCreateScreen(Screen):
     #create-msg {
         height: 3;
     }
+
+    #node-panel {
+        width: 1fr;
+        height: 100%;
+        margin: 0 1 0 0;
+        padding: 0 1;
+    }
+
+    #node-panel-title {
+        height: 3;
+        color: #ff9e64;
+        text-style: bold;
+        padding: 0 1;
+    }
+
+    #node-list {
+        height: 1fr;
+        padding: 0;
+    }
+
+    .node-card {
+        background: #24283b;
+        border: solid #3b4261;
+        padding: 1 2;
+        margin: 0 0 1 0;
+        height: auto;
+    }
+
+    .node-card-selected {
+        background: #24283b;
+        border: solid #2680eb;
+        padding: 1 2;
+        margin: 0 0 1 0;
+        height: auto;
+    }
+
+    .node-header {
+        color: #c0d0e0;
+        text-style: bold;
+        height: 1;
+    }
+
+    .node-tags {
+        height: 1;
+    }
+
+    .node-desc {
+        color: #565f89;
+        height: auto;
+        max-height: 3;
+    }
+
+    .node-load {
+        height: 1;
+        padding: 0 0;
+    }
+
+    .node-sep {
+        color: #3b4261;
+        height: 1;
+    }
+
+    .tag-tcp {
+        color: #ffffff;
+        background: #27ae60;
+    }
+
+    .tag-udp {
+        color: #ffffff;
+        background: #2680eb;
+    }
+
+    .tag-http {
+        color: #ffffff;
+        background: #e67e22;
+    }
+
+    .tag-https {
+        color: #ffffff;
+        background: #e74c3c;
+    }
+
+    .tag-stcp {
+        color: #ffffff;
+        background: #8e44ad;
+    }
+
+    .tag-bandwidth {
+        color: #7dcfff;
+        background: #2d3a4f;
+    }
+
+    .tag-vip {
+        color: #ffffff;
+        background: #e67e22;
+    }
+
+    .tag-overload {
+        color: #ffffff;
+        background: #c0392b;
+    }
+
+    .load-bar {
+        color: #27ae60;
+    }
+
+    .load-bar-warn {
+        color: #e67e22;
+    }
+
+    .load-bar-danger {
+        color: #e74c3c;
+    }
+
+    .load-bar-full {
+        color: #c0392b;
+    }
+
+    .node-load-text {
+        color: #565f89;
+    }
     """
 
     def __init__(self):
@@ -56,37 +178,44 @@ class TunnelCreateScreen(Screen):
         self.api = MEFrpAPI()
         self.nodes: list = []
         self.proxy_types = ["tcp", "udp", "http", "https", "stcp", "xtcp"]
+        self.node_map: dict = {}  # nodeId -> node dict
 
     def compose(self) -> ComposeResult:
         yield Header()
-        with ScrollableContainer():
-            with Vertical(id="create-form"):
-                yield Static("创建新隧道", classes="title")
-                yield Label("隧道名称:")
-                yield Input(placeholder="例如: 我的MC服务器", id="t-name")
-                yield Label("隧道类型:")
-                yield Select(
-                    [(t, t) for t in self.proxy_types],
-                    id="t-type", value="tcp",
-                )
-                yield Label("选择节点:")
-                yield Select([], id="t-node")
-                yield Label("本地地址:")
-                yield Input(placeholder="例如: 127.0.0.1", id="t-local-addr", value="127.0.0.1")
-                yield Label("本地端口:")
-                yield Input(placeholder="例如: 25565", id="t-local-port")
-                yield Label("远程端口 (TCP/UDP):")
-                yield Input(placeholder="留空自动分配", id="t-remote-port")
-                yield Label("域名 (HTTP/HTTPS):")
-                yield Input(placeholder="例如: example.com", id="t-domain")
-                yield Static("", id="create-msg")
-                with Horizontal(id="create-actions"):
-                    yield Button("创建隧道", id="btn-create", variant="primary")
-                    yield Button("返回", id="btn-back")
+        with Vertical(id="create-form"):
+            yield Static("创建新隧道", classes="title")
+            yield Label("隧道名称:")
+            yield Input(placeholder="例如: 我的MC服务器", id="t-name")
+            yield Label("隧道类型:")
+            yield Select(
+                [(t, t) for t in self.proxy_types],
+                id="t-type", value="tcp",
+            )
+            yield Label("选择节点:")
+            yield Select([], id="t-node")
+            yield Label("本地地址:")
+            yield Input(placeholder="例如: 127.0.0.1", id="t-local-addr", value="127.0.0.1")
+            yield Label("本地端口:")
+            yield Input(placeholder="例如: 25565", id="t-local-port")
+            yield Label("远程端口 (TCP/UDP):")
+            yield Input(placeholder="留空自动分配", id="t-remote-port")
+            yield Label("域名 (HTTP/HTTPS):")
+            yield Input(placeholder="例如: example.com", id="t-domain")
+            yield Static("", id="create-msg")
+            with Horizontal(id="create-actions"):
+                yield Button("创建隧道", id="btn-create", variant="primary")
+                yield Button("返回", id="btn-back")
+        with Vertical(id="node-panel"):
+            yield Static("节点信息", id="node-panel-title")
+            yield ScrollableContainer(id="node-list")
         yield Footer()
 
     def on_mount(self):
         self._load_nodes()
+
+    # ------------------------------------------------------------------ #
+    # 节点加载
+    # ------------------------------------------------------------------ #
 
     @work(exclusive=True)
     async def _load_nodes(self):
@@ -97,6 +226,15 @@ class TunnelCreateScreen(Screen):
             data = self.api.get_create_proxy_data()
             nodes = data if isinstance(data, list) else data.get("nodes", data.get("nodeList", []))
             self.nodes = nodes
+
+            # 构建 nodeId -> node 映射
+            self.node_map = {}
+            for n in self.nodes:
+                if isinstance(n, dict):
+                    nid = n.get("nodeId", n.get("id", 0))
+                    self.node_map[str(nid)] = n
+
+            # 填充下拉选项
             select = self.query_one("#t-node")
             if isinstance(select, Select):
                 options = []
@@ -106,12 +244,167 @@ class TunnelCreateScreen(Screen):
                         nname = n.get("nodeName", n.get("name", f"节点{nid}"))
                         options.append((f"{nname} (ID:{nid})", str(nid)))
                 select.set_options(options)
-                if isinstance(msg, Static):
-                    msg.update(f"已加载 {len(nodes)} 个节点")
-                    msg.styles.color = "#27ae60"
+
+            # 渲染右侧节点卡片
+            self._render_node_cards()
+
+            if isinstance(msg, Static):
+                msg.update(f"已加载 {len(nodes)} 个节点")
+                msg.styles.color = "#27ae60"
         except Exception as e:
             if isinstance(msg, Static):
                 msg.update(f"加载节点失败: {e}")
+
+    # ------------------------------------------------------------------ #
+    # 节点卡片渲染
+    # ------------------------------------------------------------------ #
+
+    def _render_node_cards(self, highlight_id: str = ""):
+        """渲染所有节点卡片到右侧面板。"""
+        node_list = self.query_one("#node-list")
+        if not isinstance(node_list, ScrollableContainer):
+            return
+        node_list.remove_children()
+
+        # 按地区分组
+        groups: dict[str, list] = {}
+        for n in self.nodes:
+            if not isinstance(n, dict):
+                continue
+            nid = str(n.get("nodeId", n.get("id", "?")))
+            region = self._get_region(n)
+            groups.setdefault(region, []).append((nid, n))
+
+        for region, items in groups.items():
+            # 区域标题
+            count = len(items)
+            region_title = Static(
+                f"  {region} ({count})",
+                classes="node-sep",
+            )
+            node_list.mount(region_title)
+
+            for nid, n in items:
+                card = self._build_node_card(n, nid, nid == highlight_id)
+                node_list.mount(card)
+
+    def _get_region(self, node: dict) -> str:
+        """从节点名称中提取区域。"""
+        name = node.get("nodeName", node.get("name", ""))
+        # 常见格式: "北京 ①" "四川/成都 ②" "广东/肇庆 ①"
+        for sep in ["/", " "]:
+            if sep in name:
+                return name.split(sep)[0].strip()
+        return name[:4] if len(name) > 4 else name or "其他"
+
+    def _build_node_card(self, node: dict, nid: str, selected: bool = False) -> Vertical:
+        """构建单个节点卡片。"""
+        name = node.get("nodeName", node.get("name", f"节点 {nid}"))
+        desc = node.get("description", node.get("desc", node.get("remark", "")))
+        bandwidth = node.get("bandwidth", node.get("rate", node.get("maxBandwidth", "")))
+        is_vip = node.get("isVip", node.get("vip", False))
+        is_overload = node.get("isOverload", node.get("overload", False))
+        load = node.get("load", node.get("usage", 0))
+
+        # 支持的协议
+        protocols = []
+        if node.get("supportTcp", node.get("tcp", True)):
+            protocols.append(("TCP", "#27ae60"))
+        if node.get("supportUdp", node.get("udp", True)):
+            protocols.append(("UDP", "#2680eb"))
+        if node.get("supportHttp", node.get("http", False)):
+            protocols.append(("HTTP", "#e67e22"))
+        if node.get("supportHttps", node.get("https", False)):
+            protocols.append(("HTTPS", "#e74c3c"))
+        if node.get("supportStcp", node.get("stcp", False)):
+            protocols.append(("STCP", "#8e44ad"))
+
+        card_class = "node-card-selected" if selected else "node-card"
+
+        children = []
+
+        # 标题行: # ID 名称 [VIP] [过载]
+        header_parts = f"[bold #c0d0e0]# {nid} {name}[/]"
+        if is_vip:
+            header_parts += "  [bold #e67e22]VIP[/]"
+        if is_overload:
+            header_parts += "  [bold #c0392b]过载[/]"
+        children.append(Static(header_parts, classes="node-header"))
+
+        # 标签行: TCP UDP 200Mbps
+        tag_parts = []
+        for proto, color in protocols:
+            tag_parts.append(f"[{color}]{proto}[/]")
+        if bandwidth:
+            tag_parts.append(f"[#7dcfff on #2d3a4f] {bandwidth} [/]")
+        if tag_parts:
+            children.append(Static("  ".join(tag_parts), classes="node-tags"))
+
+        # 描述
+        if desc:
+            desc_text = str(desc)[:80]
+            children.append(Static(f"[#565f89]{desc_text}[/]", classes="node-desc"))
+
+        # 负载条
+        load_pct = self._parse_load(load)
+        load_bar_widget = self._make_load_bar(load_pct)
+        children.append(load_bar_widget)
+
+        # 分隔线
+        children.append(Static("[#3b4261]" + "─" * 30 + "[/]", classes="node-sep"))
+
+        return Vertical(*children, classes=card_class, id=f"node-card-{nid}")
+
+    def _parse_load(self, load) -> int:
+        """解析负载值为 0-100 的整数。"""
+        if isinstance(load, (int, float)):
+            v = int(load)
+            return max(0, min(100, v))
+        if isinstance(load, str):
+            load = load.strip().replace("%", "")
+            try:
+                return max(0, min(100, int(float(load))))
+            except ValueError:
+                pass
+        return 0
+
+    def _make_load_bar(self, pct: int) -> Static:
+        """生成负载进度条文本。"""
+        bar_width = 20
+        filled = int(bar_width * pct / 100)
+        empty = bar_width - filled
+
+        if pct >= 100:
+            bar_cls = "load-bar-full"
+        elif pct >= 80:
+            bar_cls = "load-bar-danger"
+        elif pct >= 50:
+            bar_cls = "load-bar-warn"
+        else:
+            bar_cls = "load-bar"
+
+        bar_text = f"[{bar_cls}]{'█' * filled}[/]{bar_cls}{'░' * empty}[/]  {pct}% 负载"
+        return Static(bar_text, classes="node-load")
+
+    # ------------------------------------------------------------------ #
+    # 事件处理
+    # ------------------------------------------------------------------ #
+
+    def on_select_changed(self, event: Select.Changed):
+        """节点下拉选择变化时，高亮对应的节点卡片。"""
+        if event.select.id == "t-node":
+            val = str(event.value) if event.value is not Select.BLANK else ""
+            # 先清除所有高亮
+            for child in self.query_one("#node-list").query(".node-card-selected"):
+                child.set_class(False, "node-card-selected")
+                child.set_class(True, "node-card")
+            # 高亮选中卡片
+            if val:
+                card = self.query_one(f"#node-card-{val}")
+                if card:
+                    card.set_class(False, "node-card")
+                    card.set_class(True, "node-card-selected")
+                    card.scroll_visible()
 
     def on_button_pressed(self, event: Button.Pressed):
         if event.button.id == "btn-create":
@@ -156,8 +449,8 @@ class TunnelCreateScreen(Screen):
             "localPort": int(local_port),
         }
 
-        if node_val:
-            params["nodeId"] = int(node_val) if node_val.isdigit() else node_val
+        if node_val and node_val is not Select.BLANK:
+            params["nodeId"] = int(node_val) if str(node_val).isdigit() else node_val
         if remote_port:
             params["remotePort"] = int(remote_port)
         if domain and ptype in ("http", "https"):
