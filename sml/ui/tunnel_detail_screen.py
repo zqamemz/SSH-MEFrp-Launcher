@@ -173,22 +173,17 @@ class TunnelDetailScreen(Screen):
                     proxy_info = p
                     break
 
-            frpc_token = self.api.get_frp_token()
-            node_id = proxy_info.get("nodeId", proxy_info.get("node_id", 0))
-
             if isinstance(config, dict) and "config" in config:
                 tunnel_config = config["config"]
             else:
                 tunnel_config = str(config)
 
             write_tunnel_config(self.proxy_id, tunnel_config)
-            install_tunnel_service(
-                proxy_id=self.proxy_id,
-                proxy_name=proxy_info.get("proxyName", f"tunnel_{self.proxy_id}"),
-                frpc_token=frpc_token,
-                node_id=node_id,
-            )
-            self._msg("服务安装成功", error=False)
+            ok, msg = install_tunnel_service(self.proxy_id)
+            if ok:
+                self._msg("服务安装成功", error=False)
+            else:
+                self._msg(msg, error=True)
             self.refresh_data()
         except Exception as e:
             self._msg(f"安装失败: {e}")

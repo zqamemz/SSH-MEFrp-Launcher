@@ -32,7 +32,7 @@ class MainScreen(Screen):
     }
 
     #stat-grid {
-        grid-size: 1 4;
+        grid-size: 4 1;
         grid-columns: 1fr 1fr 1fr 1fr;
         margin: 0 2;
         height: 5;

@@ -7,6 +7,7 @@ from textual.widgets import Button, Static, Header, Footer, DataTable, Label
 from textual import work
 
 from sml.api.client import MEFrpAPI, APIError
+from sml.manager.systemd import get_tunnel_status
 
 
 class TunnelListScreen(Screen):
@@ -80,7 +81,7 @@ class TunnelListScreen(Screen):
     def on_mount(self):
         table = self.query_one("#tunnel-table")
         if isinstance(table, DataTable):
-            table.add_columns("ID", "名称", "类型", "节点", "本地端口", "状态", "域名")
+            table.add_columns("ID", "名称", "类型", "节点", "本地端口", "状态", "在线", "域名")
         self.refresh_data()
 
     def on_button_pressed(self, event: Button.Pressed):
@@ -125,9 +126,22 @@ class TunnelListScreen(Screen):
                     ptype = p.get("proxyType", p.get("type", "?"))
                     node = p.get("nodeName", p.get("node", "?"))
                     local = p.get("localAddr", p.get("localPort", "?"))
-                    status = "启用" if not p.get("isDisabled", False) else "禁用"
+                    disabled = p.get("isDisabled", False)
+                    status = "禁用" if disabled else "启用"
+                    # 在线状态：优先用本地 systemd 状态，否则根据启用状态推断
+                    online = ""
+                    try:
+                        svc_status = get_tunnel_status(int(pid))
+                        if svc_status == "active":
+                            online = "● 在线"
+                        elif svc_status == "inactive":
+                            online = "○ 离线"
+                        else:
+                            online = "○ 未安装" if not disabled else "○ 离线"
+                    except Exception:
+                        online = "○ 离线" if not disabled else "○ 禁用"
                     domain = p.get("domain", p.get("customDomain", ""))
-                    table.add_row(str(pid), name, ptype, node, str(local), status, str(domain))
+                    table.add_row(str(pid), name, ptype, node, str(local), status, online, str(domain))
 
             if isinstance(msg, Static):
                 msg.update(f"共 {len(self.proxies)} 条隧道")
