@@ -1,0 +1,23 @@
+[project]
+name = "sml"
+version = "1.0.0"
+description = "SML - ME Frp 终端图形化管理工具 (SSH/Terminal TUI)"
+authors = [
+    {name = "SML Team"},
+]
+requires-python = ">=3.8"
+dependencies = [
+    "textual>=1.0.0",
+    "requests>=2.25.0",
+    "pyyaml>=5.1",
+]
+
+[project.scripts]
+sml = "sml.__main__:main"
+
+[build-system]
+requires = ["setuptools>=64.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["sml*"]
