@@ -24,7 +24,6 @@ setup(
     entry_points={
         "console_scripts": [
             "sml=sml.__main__:main",
-            "sml-install=sml.__main__:install_cli",
         ],
     },
 )

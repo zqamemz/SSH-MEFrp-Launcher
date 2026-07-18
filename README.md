@@ -56,117 +56,59 @@
 
 ## 快速开始
 
-### 0. 安装 Git（如尚未安装）
+### 一键安装（推荐）
 
-本项目通过 Git 克隆源码。若系统中还没有 `git` 命令，请先安装：
-
-**Debian / Ubuntu：**
+项目提供 `install.sh` 安装脚本，会在 `/opt/sml` 创建虚拟环境并安装所有依赖，同时生成 `/usr/local/bin/sml` 命令，之后**无需激活虚拟环境**即可直接运行。
 
 ```bash
-sudo apt update
-sudo apt install -y git
+# 下载项目（若尚未下载）
+git clone https://github.com/zqamemz/Immortal-TUI-MEFrp-Launcher.git
+cd Immortal-TUI-MEFrp-Launcher
+
+# 一键安装（默认安装到 /opt/sml，可自定义：bash install.sh /usr/local/sml）
+bash install.sh
 ```
 
-**CentOS / RHEL / Rocky / AlmaLinux：**
+安装完成后，在任何终端直接运行：
 
 ```bash
-# CentOS 7
-sudo yum install -y git
-
-# CentOS 8+ / RHEL 8+ / Rocky / Alma
-sudo dnf install -y git
+sml              # 启动 TUI
+sml install      # 安装内置 mefrpc
+sml install --force  # 强制重装 mefrpc
+sml uninstall    # 卸载 mefrpc
 ```
 
-**Arch Linux：**
+> **原理：** `install.sh` 在项目目录创建 `venv`，并将 `/usr/local/bin/sml` 写为 bash 脚本，内部调用 `venv/bin/python -m sml`，因此每次运行 `sml` 自动使用虚拟环境，**无需手动 `source venv/bin/activate`**。
 
-```bash
-sudo pacman -S git
-```
+### 手动安装（不使用 install.sh）
 
-**验证安装：**
-
-```bash
-git --version
-# 示例输出: git version 2.x.x
-```
-
-### 1. 克隆项目
+若你希望手动控制安装过程：
 
 ```bash
 git clone https://github.com/zqamemz/Immortal-TUI-MEFrp-Launcher.git
 cd Immortal-TUI-MEFrp-Launcher
-```
 
-### 2. 创建并激活 Python 虚拟环境
-
-强烈建议使用虚拟环境，避免与系统 Python 包冲突。
-
-```bash
-# 创建虚拟环境（目录名 venv 可自定义）
+# 创建并激活虚拟环境
 python3 -m venv venv
-```
+source venv/bin/activate   # 每次新终端需执行此步
 
-**激活虚拟环境：**
-
-```bash
-# Linux / macOS（bash / zsh）
-source venv/bin/activate
-
-# 若使用 fish shell
-# source venv/bin/activate.fish
-```
-
-激活成功后，终端提示符前通常会出现 `(venv)`，例如：
-
-```text
-(venv) user@host:~/Immortal-TUI-MEFrp-Launcher$
-```
-
-后续的 `pip` / `python` 命令都在该虚拟环境中执行。退出虚拟环境可输入：
-
-```bash
-deactivate
-```
-
-> **提示：** 每次新开终端后，进入项目目录并重新执行 `source venv/bin/activate` 即可继续使用。
-
-### 3. 安装依赖（使用 requirements.txt）
-
-请先确认虚拟环境已激活（提示符有 `(venv)`），再安装：
-
-```bash
-# 升级 pip（可选）
-pip install -U pip
-
-# 按依赖文件安装
+# 安装依赖
 pip install -r requirements.txt
-
-# 以可编辑模式安装本项目（生成 sml / sml-install 命令）
 pip install -e .
 ```
 
-安装完成后，程序会在首次运行时自动部署内置的 `mefrpc`；也可手动执行：
+### 运行
 
 ```bash
-sml-install
-```
-
-### 4. 运行
-
-```bash
-# 直接启动（需已激活虚拟环境且已 pip install -e .）
+# 一键安装方式：直接运行（无需激活虚拟环境）
 sml
 
-# 或者使用 Python 模块
+# 手动安装方式：需先激活虚拟环境
+source venv/bin/activate
+sml
+# 或使用模块方式
 python -m sml
 ```
-
-### 5. 首次使用
-
-1. 启动程序后，使用已有账号密码或访问 Token **登录**
-2. 登录后进入主菜单，可通过 **设置** 配置 frpc / mefrpc 路径
-3. 在 **隧道列表** 中查看已有隧道，或 **新建隧道**
-4. 进入隧道详情可 **安装 Systemd 服务** 实现进程守护
 
 ---
 
